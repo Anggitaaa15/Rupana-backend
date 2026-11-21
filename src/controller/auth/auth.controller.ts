@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 export class AuthController {
 
     // REGISTER
-    register = async (req: Request, res: Response) => {
+    static register = async (req: Request, res: Response) => {
         try {
             // Validasi data register
             const validatedData = registerSchema.safeParse(req.body);
@@ -73,7 +73,7 @@ export class AuthController {
 
 
     // LOGIN
-    login = async (req: Request, res: Response) => {
+    static login = async (req: Request, res: Response) => {
         try {
             // Validasi data login
             const validatedData = loginSchema.safeParse(req.body);

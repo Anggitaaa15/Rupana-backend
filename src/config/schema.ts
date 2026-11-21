@@ -43,7 +43,7 @@ export const paymentStatusEnum = pgEnum("payment_status", [
 // 1. USERS
 export const usersTable = pgTable("users", {
     id: serial("id").primaryKey(),
-    name: varchar("name", { length: 100 }).notNull(),
+    username: varchar("username", { length: 100 }).notNull(),
     email: varchar("email", { length: 100 }).notNull().unique(),
     password: text("password").notNull(),
     phone: varchar("phone", { length: 20 }),

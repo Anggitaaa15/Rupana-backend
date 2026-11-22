@@ -47,6 +47,8 @@ export const usersTable = pgTable("users", {
     password: text("password").notNull(),
     phone: varchar("phone", { length: 20 }),
     address: text("address"),
+    profileImage: text("profile_image"),
+    profileImagePublicId: varchar("profile_image_public_id", { length: 255 }),
     role: userRoleEnum("role").default("CUSTOMER").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });

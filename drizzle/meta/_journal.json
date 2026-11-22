@@ -15,6 +15,13 @@
       "when": 1795223542057,
       "tag": "0001_violet_leech",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795344287108,
+      "tag": "0002_short_lionheart",
+      "breakpoints": true
     }
   ]
 }

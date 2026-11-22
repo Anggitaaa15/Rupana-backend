@@ -50,5 +50,28 @@ export class CategoryController {
     }
 
     // GET ALL
+    static async getAll (req: Request, res: Response ) {
+        try {
+            const categories = await db
+                .select()
+                .from(categoriesTable)
+                .orderBy(asc(categoriesTable.name));
+
+            return res.status(200).json({
+                success: true,
+                message: "Data kategori berhasil di ambil",
+                data: categories,
+        })
+        } catch (error) {
+            console.log(error)
+
+            return res.status(500).json({
+                success: false,
+                message: "Gagal mengambil data kategori"
+            })
+        }
+    }
+
+    // GET BY ID
     
 } 

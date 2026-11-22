@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { db } from "../../config/db";
-import { categoriesTable } from "../../config/schema";
+import { categoriesTable, productsTable } from "../../config/schema";
 import { asc, eq } from "drizzle-orm";
-import { success } from "zod";
 import { createCategorySchema, updateCategorySchema } from "../../validations/category.validation";
 
 export class CategoryController {
@@ -42,7 +41,7 @@ export class CategoryController {
             })
             .returning()
 
-        return res.status(200).json({
+        return res.status(201).json({
             success: true,
             message: "Kategori berhasil dibuat!",
             data: newCategory,
@@ -172,5 +171,47 @@ export class CategoryController {
         });
     }
 
-    
+    static async deleteCategory (req: Request, res: Response) {
+        const id = Number(req.params.id)
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json ({
+                success: false,
+                message: "ID kategori tidak valid"
+            })
+        }
+
+        const [existingCategory] = await db
+            .select()
+            .from(categoriesTable)
+            .where(eq(categoriesTable.id, id))
+
+        if (!existingCategory) {
+            return res.status(404).json({
+                success: false,
+                message: "Kategori tidak ditemukan",
+            });
+        }
+
+        const [relatedProduct] = await db
+            .select()
+            .from(productsTable)
+            .where(eq(productsTable.categoryId, id));
+
+        if (relatedProduct) {
+            return res.status(409).json({
+                success: false,
+                message: "Kategori tidak dapat dihapus karena masih digunakan oleh produk",
+            });
+        }
+
+        await db 
+            .delete(categoriesTable)
+            .where(eq(categoriesTable.id, id))
+        
+        return res.status(200).json({
+            success: true,
+            message: "Kategori berhasil dihapus",
+        });
+    }
 } 

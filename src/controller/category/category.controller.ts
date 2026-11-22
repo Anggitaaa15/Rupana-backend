@@ -3,7 +3,7 @@ import { db } from "../../config/db";
 import { categoriesTable } from "../../config/schema";
 import { asc, eq } from "drizzle-orm";
 import { success } from "zod";
-import { createCategorySchema } from "../../validations/category.validation";
+import { createCategorySchema, updateCategorySchema } from "../../validations/category.validation";
 
 export class CategoryController {
 
@@ -101,4 +101,76 @@ export class CategoryController {
             data: category,
         })
     }
+
+    // UPDATE
+    static async updateCategory (req: Request, res: Response) {
+        const id =  Number(req.params.id)
+
+        if (!Number.isInteger(id) || id <= 0)
+            return res.status(400).json ({
+                success: false,
+                message: "ID kategori tidak valid"
+            })
+
+        const validation = updateCategorySchema.safeParse(req.body)
+
+        if (!validation.success) {
+            return res.status(400).json({
+                success: false,
+                message: "Validasi gagal",
+                errors: validation.error.flatten().fieldErrors,
+            })
+        }
+        
+        const { name, description } = validation.data
+        if (name === undefined && description === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: "Minimal satu data harus diubah",
+            });
+        }
+
+        const [existingCategory] = await db 
+            .select()
+            .from(categoriesTable)
+            .where(eq(categoriesTable.id, id))
+
+        if (!existingCategory) {
+             return res.status(404).json({
+                success: false,
+                message: "Kategori tidak ditemukan",
+            });
+        }
+
+        if (name !== undefined) {
+            const [duplicateCategory] = await db
+                .select()
+                .from(categoriesTable)
+                .where(eq(categoriesTable.name, name))
+
+                if (duplicateCategory && duplicateCategory.id !== id ) {
+                    return res.status(409).json({
+                        success: false,
+                        message: "Nama kategori sudah digunakan"
+                    })
+                }
+        }
+
+        const[updateCategory] = await db
+            .update(categoriesTable)
+            .set({
+                ...(name !== undefined && {name}),
+                ...(description !== undefined && {description})
+            })
+            .where(eq(categoriesTable.id, id))
+            .returning()
+
+        return res.status(200).json({
+            success: true,
+            message: "Kategori berhasil diperbarui",
+            data: updateCategory,
+        });
+    }
+
+    
 } 

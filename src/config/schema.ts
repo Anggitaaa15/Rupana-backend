@@ -4,8 +4,7 @@ import { pgTable, pgEnum, serial, integer, varchar, text, boolean, timestamp } f
 export const userRoleEnum = pgEnum("user_role", [
     "CUSTOMER",
     "ADMIN",
-    "CRAFTSMAN",
-]);
+    "CRAFTSMAN", ]);
 
 export const orderTypeEnum = pgEnum("order_type", [
     "CATALOG",

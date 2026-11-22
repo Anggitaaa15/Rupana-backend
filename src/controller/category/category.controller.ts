@@ -73,5 +73,32 @@ export class CategoryController {
     }
 
     // GET BY ID
-    
+    static async getById (req:Request, res: Response) {
+        const id = Number(req.params.id)
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "ID kategori tidak valid"
+            })
+        }
+
+        const [category] = await db
+            .select()
+            .from(categoriesTable)
+            .where(eq(categoriesTable.id, id));
+
+        if (!category) {
+            return res.status(404).json({
+                success: false,
+                message: "Kategori tidak ditemukan"
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Data kategori berhasil di ambil",
+            data: category,
+        })
+    }
 } 

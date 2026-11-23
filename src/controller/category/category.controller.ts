@@ -1,0 +1,256 @@
+import { Request, Response } from "express";
+import { db } from "../../config/db";
+import { categoriesTable, productsTable } from "../../config/schema";
+import { asc, eq } from "drizzle-orm";
+import { createCategorySchema, updateCategorySchema } from "../../validations/category.validation";
+
+export class CategoryController {
+
+    // CREATE
+    static async createCategory (req: Request, res: Response) {
+        
+        try {
+            const validation = createCategorySchema.safeParse(req.body)
+        
+            if (!validation.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Validasi gagal",
+                    errors: validation.error.flatten().fieldErrors,
+                })
+            }
+
+            const { name, description } = validation.data
+
+            const [existingCategory] = await db
+                .select()
+                .from(categoriesTable)
+                .where(eq(categoriesTable.name, name))
+
+            if (existingCategory) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Nama kategori sudah di gunakan"
+                })
+            }
+
+            const [newCategory] = await db 
+                .insert(categoriesTable)
+                .values({
+                    name, 
+                    description: description ?? null
+                })
+                .returning()
+
+            return res.status(201).json({
+                success: true,
+                message: "Kategori berhasil dibuat!",
+                data: newCategory,
+            })
+
+        } catch (error) {
+            console.error("Create category error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Gagal menambahkan kategori",
+            });
+        }
+    }
+
+    // GET ALL
+    static async getAll (req: Request, res: Response ) {
+        try {
+            const categories = await db
+                .select()
+                .from(categoriesTable)
+                .orderBy(asc(categoriesTable.name));
+
+            return res.status(200).json({
+                success: true,
+                message: "Data kategori berhasil di ambil",
+                data: categories,
+        })
+        } catch (error) {
+            console.error("Get categories error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Gagal mengambil data kategori"
+            })
+        }
+    }
+
+    // GET BY ID
+    static async getById (req:Request, res: Response) {
+        try {
+            const id = Number(req.params.id)
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "ID kategori tidak valid"
+                })
+            }
+
+            const [category] = await db
+                .select()
+                .from(categoriesTable)
+                .where(eq(categoriesTable.id, id));
+
+            if (!category) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Kategori tidak ditemukan"
+                })
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Data kategori berhasil di ambil",
+                data: category,
+            })
+        } catch (error) {
+            console.error("Get category error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Gagal mengambil data kategori",
+            });
+        }
+    }
+
+    // UPDATE
+    static async updateCategory (req: Request, res: Response) {
+        try {
+            const id =  Number(req.params.id)
+
+            if (!Number.isInteger(id) || id <= 0)
+                return res.status(400).json ({
+                    success: false,
+                    message: "ID kategori tidak valid"
+                })
+
+            const validation = updateCategorySchema.safeParse(req.body)
+
+            if (!validation.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Validasi gagal",
+                    errors: validation.error.flatten().fieldErrors,
+                })
+            }
+            
+            const { name, description } = validation.data
+            if (name === undefined && description === undefined) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Minimal satu data harus diubah",
+                });
+            }
+
+            const [existingCategory] = await db 
+                .select()
+                .from(categoriesTable)
+                .where(eq(categoriesTable.id, id))
+
+            if (!existingCategory) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Kategori tidak ditemukan",
+                });
+            }
+
+            if (name !== undefined) {
+                const [duplicateCategory] = await db
+                    .select()
+                    .from(categoriesTable)
+                    .where(eq(categoriesTable.name, name))
+
+                    if (duplicateCategory && duplicateCategory.id !== id ) {
+                        return res.status(409).json({
+                            success: false,
+                            message: "Nama kategori sudah digunakan"
+                        })
+                    }
+            }
+
+            const[updateCategory] = await db
+                .update(categoriesTable)
+                .set({
+                    ...(name !== undefined && {name}),
+                    ...(description !== undefined && {description})
+                })
+                .where(eq(categoriesTable.id, id))
+                .returning()
+
+            return res.status(200).json({
+                success: true,
+                message: "Kategori berhasil diperbarui",
+                data: updateCategory,
+            });
+
+        } catch (error) {
+            console.error("Update category error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Gagal memperbarui kategori",
+            });
+        }
+    }
+
+    static async deleteCategory (req: Request, res: Response) {
+        try {
+            const id = Number(req.params.id)
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).json ({
+                    success: false,
+                    message: "ID kategori tidak valid"
+                })
+            }
+
+            const [existingCategory] = await db
+                .select()
+                .from(categoriesTable)
+                .where(eq(categoriesTable.id, id))
+
+            if (!existingCategory) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Kategori tidak ditemukan",
+                });
+            }
+
+            const [relatedProduct] = await db
+                .select()
+                .from(productsTable)
+                .where(eq(productsTable.categoryId, id));
+
+            if (relatedProduct) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Kategori tidak dapat dihapus karena masih digunakan oleh produk",
+                });
+            }
+
+            await db 
+                .delete(categoriesTable)
+                .where(eq(categoriesTable.id, id))
+            
+            return res.status(200).json({
+                success: true,
+                message: "Kategori berhasil dihapus",
+            });
+
+        } catch (error) {
+            console.error("Delete category error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Gagal menghapus kategori",
+            });
+        }
+    }
+} 

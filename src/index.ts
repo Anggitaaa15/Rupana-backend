@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth/auth.routes"
 import profileRoutes from "./routes/profile/profile.routes"
+import categoryRoutes from "./routes/category/category.routes";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/profile", profileRoutes);
+app.use("/api/v1/category", categoryRoutes)
 
 // Route utama
 app.get("/", (_req, res) => {

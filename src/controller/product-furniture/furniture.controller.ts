@@ -120,4 +120,55 @@ export class ProductController {
         }
     }
 
+    // GET PRODUCT BY ID
+    static async getProductById(req: Request, res: Response) {
+        try {
+            // Validasi ID
+            const id = Number(req.params.id);
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "ID produk tidak valid",
+                });
+            }
+
+            // Ambil detail produk
+            const [product] = await db
+                .select({
+                    ...getTableColumns(productsTable),
+                    categoryName: categoriesTable.name,
+                })
+                .from(productsTable)
+                .leftJoin(
+                    categoriesTable,
+                    eq(productsTable.categoryId, categoriesTable.id)
+                )
+                .where(eq(productsTable.id, id));
+
+            // Cek produk
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Produk tidak ditemukan",
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Detail produk berhasil diambil",
+                data: product,
+            });
+
+        } catch (error) {
+            console.error("Get product by ID error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan pada server",
+            });
+        }
+    }
+
+
 }

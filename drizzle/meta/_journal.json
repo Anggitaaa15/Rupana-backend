@@ -29,6 +29,13 @@
       "when": 1795441614606,
       "tag": "0003_acoustic_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795449254293,
+      "tag": "0004_mighty_joystick",
+      "breakpoints": true
     }
   ]
 }

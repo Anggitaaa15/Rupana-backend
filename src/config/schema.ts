@@ -86,6 +86,7 @@ export const ordersTable = pgTable("orders", {
     userId: integer("user_id")
         .references(() => usersTable.id)
         .notNull(),
+    orderType: orderTypeEnum("order_type").notNull(),
     status: orderStatusEnum("status")
         .default("PENDING_REVIEW")
         .notNull(),

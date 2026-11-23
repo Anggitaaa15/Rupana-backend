@@ -36,6 +36,13 @@
       "when": 1795449254293,
       "tag": "0004_mighty_joystick",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795450536310,
+      "tag": "0005_unusual_power_pack",
+      "breakpoints": true
     }
   ]
 }

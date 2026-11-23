@@ -110,6 +110,8 @@ export const orderDetailsTable = pgTable("order_details", {
         .notNull(),
     productId: integer("product_id")
         .references(() => productsTable.id, { onDelete: "set null" }),
+    categoryId: integer("category_id")
+        .references(() => categoriesTable.id),
     furnitureName: varchar("furniture_name", { length: 150 }).notNull(),
     orderType: orderTypeEnum("order_type").notNull(),
     width: integer("width"),

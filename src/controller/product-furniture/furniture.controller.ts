@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { createProductSchema } from "../../validations/product.validation";
 import { db } from "../../config/db";
 import { categoriesTable, productsTable } from "../../config/schema";
-import { eq } from "drizzle-orm";
+import { desc, eq, getTableColumns } from "drizzle-orm";
 import { deleteFromCloudinary, uploadToCloudinary } from "../../service/cloudinary.service";
 
 export class ProductController {
@@ -88,4 +88,36 @@ export class ProductController {
             });
         }
     }
+
+    // GET ALL PRODUCTS
+    static async getAllProducts(req: Request, res: Response) {
+        try {
+            const products = await db
+                .select({
+                    ...getTableColumns(productsTable),
+                    categoryName: categoriesTable.name,
+                })
+                .from(productsTable)
+                .leftJoin(
+                    categoriesTable,
+                    eq(productsTable.categoryId, categoriesTable.id)
+                )
+                .orderBy(desc(productsTable.createdAt));
+
+            return res.status(200).json({
+                success: true,
+                message: "Data produk berhasil diambil",
+                data: products,
+            });
+
+        } catch (error) {
+            console.error("Get all products error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan pada server",
+            });
+        }
+    }
+
 }

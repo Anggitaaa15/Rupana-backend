@@ -75,6 +75,7 @@ export const productsTable = pgTable("products", {
     height: integer("height"),
     length: integer("length"),
     imageUrl: text("image_url"),
+    imagePublicId: varchar("image_public_id", {length: 255}),
     isAvailable: boolean("is_available").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });

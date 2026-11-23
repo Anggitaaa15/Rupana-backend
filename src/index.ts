@@ -15,7 +15,7 @@ app.use(express.json());
 
 app.use("/api/v1/auth", authRoutes);
 
-app.use("api/v1/category", categoryRoutes)
+app.use("/api/v1/category", categoryRoutes)
 
 // Route utama
 app.get("/", (_req, res) => {

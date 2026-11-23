@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { createProductSchema } from "../../validations/product.validation";
+import { createProductSchema, updateProductSchema } from "../../validations/product.validation";
 import { db } from "../../config/db";
 import { categoriesTable, productsTable } from "../../config/schema";
 import { desc, eq, getTableColumns } from "drizzle-orm";
 import { deleteFromCloudinary, uploadToCloudinary } from "../../service/cloudinary.service";
 
-export class ProductController {
+export class furnitureController {
 
     // CREATE
     static async createProduct (req: Request, res: Response) {
@@ -170,5 +170,180 @@ export class ProductController {
         }
     }
 
+
+    // UPDATE PRODUCT
+    static async updateProduct(req: Request, res: Response) {
+        let uploadedPublicId: string | null = null;
+
+        try {
+            // Validasi ID
+            const id = Number(req.params.id);
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "ID produk tidak valid",
+                });
+            }
+
+            // Validasi data
+            const validation = updateProductSchema.safeParse(req.body);
+
+            if (!validation.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Validasi gagal",
+                    errors: validation.error.flatten().fieldErrors,
+                });
+            }
+
+            const data = validation.data;
+
+            // Cek apakah ada data yang diubah
+            if (Object.keys(data).length === 0 && !req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Tidak ada data yang diubah",
+                });
+            }
+
+            // Cek produk
+            const [product] = await db
+                .select()
+                .from(productsTable)
+                .where(eq(productsTable.id, id));
+
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Produk tidak ditemukan",
+                });
+            }
+
+            // Cek kategori jika categoryId diubah
+            if (data.categoryId !== undefined) {
+                const [category] = await db
+                    .select()
+                    .from(categoriesTable)
+                    .where(eq(categoriesTable.id, data.categoryId));
+
+                if (!category) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Kategori tidak ditemukan",
+                    });
+                }
+            }
+
+            // Siapkan data update
+            const updateData: Partial<typeof productsTable.$inferInsert> = {
+                ...data,
+            };
+
+            // Upload foto baru jika ada
+            if (req.file) {
+                const uploadedImage = await uploadToCloudinary(
+                    req.file.buffer
+                );
+
+                uploadedPublicId = uploadedImage.public_id;
+
+                updateData.imageUrl = uploadedImage.secure_url;
+                updateData.imagePublicId = uploadedImage.public_id;
+            }
+
+            // Update produk
+            const [updatedProduct] = await db
+                .update(productsTable)
+                .set(updateData)
+                .where(eq(productsTable.id, id))
+                .returning();
+
+            // Hapus foto lama setelah update berhasil
+            if (uploadedPublicId && product.imagePublicId) {
+                await deleteFromCloudinary(product.imagePublicId)
+                    .catch((deleteError) => {
+                        console.error("Delete old image error:", deleteError);
+                    });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Produk berhasil diperbarui",
+                data: updatedProduct,
+            });
+
+        } catch (error) {
+            // Hapus foto baru jika update database gagal
+            if (uploadedPublicId) {
+                await deleteFromCloudinary(uploadedPublicId)
+                    .catch((deleteError) => {
+                        console.error("Delete new image error:", deleteError);
+                    });
+            }
+
+            console.error("Update product error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan pada server",
+            });
+        }
+    }
+
+
+    // DELETE PRODUCT
+    static async deleteProduct(req: Request, res: Response) {
+        try {
+            // Validasi ID
+            const id = Number(req.params.id);
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "ID produk tidak valid",
+                });
+            }
+
+            // Cek produk
+            const [product] = await db
+                .select()
+                .from(productsTable)
+                .where(eq(productsTable.id, id));
+
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Produk tidak ditemukan",
+                });
+            }
+
+            // Hapus produk dari database
+            await db
+                .delete(productsTable)
+                .where(eq(productsTable.id, id));
+
+            // Hapus gambar dari Cloudinary
+            if (product.imagePublicId) {
+                await deleteFromCloudinary(product.imagePublicId)
+                    .catch((deleteError) => {
+                        console.error("Delete Cloudinary error:", deleteError);
+                    });
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Produk berhasil dihapus",
+            });
+
+        } catch (error) {
+            console.error("Delete product error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan pada server",
+            });
+        }
+    }
 
 }

@@ -6,7 +6,7 @@ import { AuthRequest } from "../../middleware/auth.middleware";
 import { createOrderSchema } from "../../validations/order.validation";
 import { uploadToCloudinary, deleteFromCloudinary } from "../../service/cloudinary.service";
 
-export class OrderController {
+export class OrdersController {
 
     // CREATE ORDER
     static async createOrders(req: AuthRequest, res: Response) {
@@ -258,5 +258,82 @@ export class OrderController {
         }
     }
 
-    
+    // GET ORDER BY ID
+    static async getOrdersById(req: AuthRequest, res: Response) {
+        try {
+            // 1. Memastikan pengguna sudah login
+            if (!req.user) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Silakan login terlebih dahulu",
+                });
+            }
+
+            // 2. Mengambil dan memvalidasi ID pesanan
+            const id = Number(req.params.id);
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "ID pesanan tidak valid",
+                });
+            }
+
+            const { userId, role } = req.user;
+
+            // 3. Mengambil data pesanan
+            const [orders] = await db
+                .select()
+                .from(ordersTable)
+                .where(eq(ordersTable.id, id))
+                .limit(1);
+
+            if (!orders) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Pesanan tidak ditemukan",
+                });
+            }
+
+            // 4. Memeriksa hak akses CUSTOMER
+            if (role === "CUSTOMER" && orders.userId !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Kamu tidak memiliki akses ke pesanan ini",
+                });
+            }
+
+            // 5. Memeriksa role pengguna
+            if (role !== "CUSTOMER" && role !== "ADMIN") {
+                return res.status(403).json({
+                    success: false,
+                    message: "Kamu tidak memiliki akses untuk melihat pesanan",
+                });
+            }
+
+            // 6. Mengambil detail pesanan
+            const details = await db
+                .select()
+                .from(orderDetailsTable)
+                .where(eq(orderDetailsTable.orderId, id));
+
+            // 7. Mengirim respons
+            return res.status(200).json({
+                success: true,
+                message: "Berhasil mengambil detail pesanan",
+                data: {
+                    orders,
+                    details,
+                },
+            });
+
+        } catch (error) {
+            console.error("Get order by ID error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan saat mengambil detail pesanan",
+            });
+        }
+    }
 }

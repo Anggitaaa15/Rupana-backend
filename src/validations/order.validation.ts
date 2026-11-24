@@ -2,10 +2,15 @@ import { z } from "zod";
 
 // Mengubah input kosong menjadi undefined
 const optionalNumber = z.preprocess(
-    (value) => value === "" || value === undefined ? undefined : value,
+    (value) => {
+        if (value === "" || value === null || value === undefined) {
+            return undefined;
+        }
+
+        return value;
+    },
     z.coerce.number().int().positive().optional()
 );
-
 const optionalText = z.string().trim().optional();
 
 export const createOrderSchema = z.object({
@@ -31,11 +36,14 @@ export const createOrderSchema = z.object({
     finishing: optionalText,
     color: optionalText,
 
-    quantity: z.coerce.number()
-        .int()
+    quantity: z.coerce.number({
+    error: "Jumlah wajib diisi",
+    })
+        .int("Jumlah harus berupa bilangan bulat")
         .positive("Jumlah minimal 1"),
 
     notes: optionalText,
+    
 }).superRefine((data, ctx) => {
 
     // Alamat wajib jika menggunakan DELIVERY

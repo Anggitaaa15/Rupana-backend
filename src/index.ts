@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth/auth.routes"
 import profileRoutes from "./routes/profile/profile.routes"
 import categoryRoutes from "./routes/category/category.routes";
 import furnitureRoutes from "./routes/product-furniture/furniture.routes"
+import orderRoutes from "./routes/order/order.routes"
 
 dotenv.config();
 
@@ -18,7 +19,8 @@ app.use(express.json());
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/category", categoryRoutes);
-app.use("/api/v1/furniture", furnitureRoutes);
+app.use("/api/v1/furniture", furnitureRoutes); 
+app.use("/api/v1/order", orderRoutes); 
 
 // Route utama
 app.get("/", (_req, res) => {

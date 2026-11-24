@@ -43,6 +43,13 @@
       "when": 1795450536310,
       "tag": "0005_unusual_power_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795451345995,
+      "tag": "0006_perfect_zombie",
+      "breakpoints": true
     }
   ]
 }

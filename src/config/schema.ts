@@ -128,6 +128,10 @@ export const orderDetailsTable = pgTable("order_details", {
     agreedPrice: integer("agreed_price").default(0).notNull(),
     notes: text("notes"),
     referenceImageUrl: text("reference_image_url"),
+    referenceImagePublicId: varchar("reference_image_public_id", {
+        length: 255,
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // 6. PAYMENTS

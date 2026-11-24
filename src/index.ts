@@ -20,7 +20,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/furniture", furnitureRoutes); 
-app.use("/api/v1/order", orderRoutes); 
+app.use("/api/v1/orders", orderRoutes); 
 
 // Route utama
 app.get("/", (_req, res) => {

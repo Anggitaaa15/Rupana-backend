@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "../../config/db";
 import { ordersTable, orderDetailsTable, productsTable, categoriesTable,} from "../../config/schema";
 import { AuthRequest } from "../../middleware/auth.middleware";
@@ -9,7 +9,7 @@ import { uploadToCloudinary, deleteFromCloudinary } from "../../service/cloudina
 export class OrderController {
 
     // CREATE ORDER
-    static async createOrder(req: AuthRequest, res: Response) {
+    static async createOrders(req: AuthRequest, res: Response) {
         let uploadedPublicId: string | null = null;
 
         try {
@@ -204,4 +204,59 @@ export class OrderController {
             });
         }
     }
+
+    // GET ALL ORDER (ADMIN & CUSTOMER)
+    static async getAllOrders(req: AuthRequest, res: Response) {
+        try {
+
+            if(!req.user) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Silakan login terlebih dahulu"
+                })
+            }
+
+            const { userId, role } = req.user
+
+            let orders;
+
+            // Customer melihat pesanannya
+            if (role === "CUSTOMER") {
+                orders = await db
+                    .select()
+                    .from(ordersTable)
+                    .where(eq(ordersTable.userId, userId))
+                    .orderBy(desc(ordersTable.createdAt));
+
+            } else if (role === "ADMIN") {
+                // Admin melihat semua pesanan
+                orders = await db
+                .select()
+                .from(ordersTable)
+                .orderBy(desc(ordersTable.createdAt))
+
+            } else {
+                return res.status(403).json({
+                    success: false,
+                    message: "Anda tidak memmiliki akses untuk melihat pesanan"
+                })
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Berhasil mengambil daftar pesanan",
+                data: orders,
+            })
+
+        } catch (error) {
+            console.error("Get All oerder error: ", error)
+
+            return res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan saat mengambil daftar pesanan"
+            })
+        }
+    }
+
+    
 }

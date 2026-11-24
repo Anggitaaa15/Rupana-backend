@@ -9,5 +9,6 @@ const router = Router();
 router.post("/", authenticate, authorize("CUSTOMER"), uploadSingleImage, OrdersController.createOrders);
 router.get("/", authenticate, authorize("CUSTOMER", "ADMIN"), OrdersController.getAllOrders);
 router.get("/:id", authenticate, authorize("CUSTOMER", "ADMIN"), OrdersController.getOrdersById);
+router.put("/:id", authenticate, authorize("ADMIN"), OrdersController.updateOrders);
 
 export default router;

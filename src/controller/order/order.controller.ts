@@ -5,6 +5,7 @@ import { ordersTable, orderDetailsTable, productsTable, categoriesTable,} from "
 import { AuthRequest } from "../../middleware/auth.middleware";
 import { createOrderSchema } from "../../validations/order.validation";
 import { uploadToCloudinary, deleteFromCloudinary } from "../../service/cloudinary.service";
+import { updateOrderSchema } from "../../validations/update-orders.validation";
 
 export class OrdersController {
 
@@ -336,4 +337,134 @@ export class OrdersController {
             });
         }
     }
+
+    // UPDATE ORDER (ADMIN)
+    static async updateOrders(req: AuthRequest, res: Response) {
+        try {
+            // 1. Memastikan pengguna sudah login
+            if (!req.user) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Silakan login terlebih dahulu",
+                });
+            }
+
+            // 2. Memastikan hanya ADMIN yang bisa memperbarui pesanan
+            if (req.user.role !== "ADMIN") {
+                return res.status(403).json({
+                    success: false,
+                    message: "Hanya admin yang dapat memperbarui pesanan",
+                });
+            }
+
+            // 3. Validasi ID pesanan
+            const id = Number(req.params.id);
+
+            if (!Number.isInteger(id) || id <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "ID pesanan tidak valid",
+                });
+            }
+
+            // 4. Validasi input
+            const validation = updateOrderSchema.safeParse(req.body);
+
+            if (!validation.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Validasi gagal",
+                    errors: validation.error.flatten().fieldErrors,
+                });
+            }
+
+            const data = validation.data;
+
+            // 5. Memeriksa apakah pesanan tersedia
+            const [order] = await db
+                .select()
+                .from(ordersTable)
+                .where(eq(ordersTable.id, id))
+                .limit(1);
+
+            if (!order) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Pesanan tidak ditemukan",
+                });
+            }
+
+            // 6. Memastikan pesanan masih menunggu pemeriksaan
+            if (order.status !== "PENDING_REVIEW") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Pesanan sudah diperiksa sebelumnya",
+                });
+            }
+
+            // 7. Mengambil detail pesanan
+            const details = await db
+                .select()
+                .from(orderDetailsTable)
+                .where(eq(orderDetailsTable.orderId, id));
+
+            if (details.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Detail pesanan tidak ditemukan",
+                });
+            }
+
+            // 8. Memperbarui harga dan total pesanan
+            const result = await db.transaction(async (tx) => {
+
+                // Saat ini setiap order dibuat dengan satu detail
+                const detail = details[0];
+
+                const [updatedDetail] = await tx
+                    .update(orderDetailsTable)
+                    .set({
+                        agreedPrice: data.agreedPrice,
+                    })
+                    .where(eq(orderDetailsTable.id, detail.id))
+                    .returning();
+
+                const totalPrice =
+                    data.agreedPrice * detail.quantity;
+
+                const [updatedOrder] = await tx
+                    .update(ordersTable)
+                    .set({
+                        totalPrice,
+                        estimatedDays: data.estimatedDays,
+                        adminNotes: data.adminNotes ?? null,
+                        status: "WAITING_PAYMENT",
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(ordersTable.id, id))
+                    .returning();
+
+                return {
+                    order: updatedOrder,
+                    detail: updatedDetail,
+                };
+            });
+
+            // 9. Mengirim respons berhasil
+            return res.status(200).json({
+                success: true,
+                message: "Pesanan berhasil diperiksa dan menunggu pembayaran",
+                data: result,
+            });
+
+        } catch (error) {
+            console.error("Update order error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Terjadi kesalahan saat memperbarui pesanan",
+            });
+        }
+    }
+
 }

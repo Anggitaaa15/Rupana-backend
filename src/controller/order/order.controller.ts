@@ -402,6 +402,25 @@ export class OrdersController {
                 });
             }
 
+            // Jika admin menolak pesanan
+            if (data.status === "REJECTED") {
+                const [rejectedOrder] = await db
+                    .update(ordersTable)
+                    .set({
+                        status: "REJECTED",
+                        adminNotes: data.adminNotes!,
+                        updatedAt: new Date(),
+                    })
+                    .where(eq(ordersTable.id, id))
+                    .returning();
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Pesanan berhasil ditolak",
+                    data: rejectedOrder,
+                });
+            }
+
             // 7. Mengambil detail pesanan
             const details = await db
                 .select()
@@ -424,19 +443,19 @@ export class OrdersController {
                 const [updatedDetail] = await tx
                     .update(orderDetailsTable)
                     .set({
-                        agreedPrice: data.agreedPrice,
+                        agreedPrice: data.agreedPrice!,
                     })
                     .where(eq(orderDetailsTable.id, detail.id))
                     .returning();
 
                 const totalPrice =
-                    data.agreedPrice * detail.quantity;
+                    data.agreedPrice! * detail.quantity;
 
                 const [updatedOrder] = await tx
                     .update(ordersTable)
                     .set({
                         totalPrice,
-                        estimatedDays: data.estimatedDays,
+                        estimatedDays: data.estimatedDays!,
                         adminNotes: data.adminNotes ?? null,
                         status: "WAITING_PAYMENT",
                         updatedAt: new Date(),

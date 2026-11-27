@@ -24,7 +24,7 @@ app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/furniture", furnitureRoutes); 
 app.use("/api/v1/orders", orderRoutes); 
 app.use("/api/v1/payment", paymentRoutes);
-app.use("/api/v1/payment", orderProgressRoutes);
+app.use("/api/v1/order-progress", orderProgressRoutes);
 
 // Route utama
 app.get("/", (_req, res) => {

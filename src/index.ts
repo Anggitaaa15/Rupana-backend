@@ -1,11 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import authRoutes from "./routes/auth/auth.routes"
-import profileRoutes from "./routes/profile/profile.routes"
+import authRoutes from "./routes/auth/auth.routes";
+import profileRoutes from "./routes/profile/profile.routes";
 import categoryRoutes from "./routes/category/category.routes";
-import furnitureRoutes from "./routes/product-furniture/furniture.routes"
-import orderRoutes from "./routes/order/order.routes"
+import furnitureRoutes from "./routes/product-furniture/furniture.routes";
+import orderRoutes from "./routes/order/order.routes";
+import paymentRoutes from "./routes/payment/payment.routes";
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/furniture", furnitureRoutes); 
 app.use("/api/v1/orders", orderRoutes); 
+app.use("/api/v1/payment", paymentRoutes);
 
 // Route utama
 app.get("/", (_req, res) => {

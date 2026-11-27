@@ -7,6 +7,7 @@ import categoryRoutes from "./routes/category/category.routes";
 import furnitureRoutes from "./routes/product-furniture/furniture.routes";
 import orderRoutes from "./routes/order/order.routes";
 import paymentRoutes from "./routes/payment/payment.routes";
+import orderProgressRoutes from "./routes/order-progress/order-progress.routes"
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/furniture", furnitureRoutes); 
 app.use("/api/v1/orders", orderRoutes); 
 app.use("/api/v1/payment", paymentRoutes);
+app.use("/api/v1/payment", orderProgressRoutes);
 
 // Route utama
 app.get("/", (_req, res) => {
